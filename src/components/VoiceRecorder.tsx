@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Mic, Square, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -8,12 +8,45 @@ interface VoiceRecorderProps {
   isOpen: boolean;
   onClose: () => void;
   type: 'morning' | 'evening';
+  isProcessing?: boolean;
 }
 
-export function VoiceRecorder({ onTranscriptionComplete, isOpen, onClose, type }: VoiceRecorderProps) {
+export function VoiceRecorder({ onTranscriptionComplete, isOpen, onClose, type, isProcessing = false }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [duration, setDuration] = useState(0);
+  const [transcript, setTranscript] = useState('');
+  const [hasRecognition, setHasRecognition] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    // Initialize speech recognition
+    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognitionAPI) {
+      const recognitionInstance = new SpeechRecognitionAPI();
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = 'en-US';
+      
+      recognitionInstance.onresult = (event: any) => {
+        let finalTranscript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript + ' ';
+          }
+        }
+        if (finalTranscript) {
+          setTranscript(prev => prev + finalTranscript);
+        }
+      };
+
+      recognitionInstance.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+      };
+
+      recognitionRef.current = recognitionInstance;
+      setHasRecognition(true);
+    }
+  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -21,11 +54,17 @@ export function VoiceRecorder({ onTranscriptionComplete, isOpen, onClose, type }
       interval = setInterval(() => {
         setDuration(d => d + 1);
       }, 1000);
-    } else {
-      setDuration(0);
     }
     return () => clearInterval(interval);
   }, [isRecording]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setDuration(0);
+      setTranscript('');
+      setIsRecording(false);
+    }
+  }, [isOpen]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -35,23 +74,32 @@ export function VoiceRecorder({ onTranscriptionComplete, isOpen, onClose, type }
 
   const startRecording = () => {
     setIsRecording(true);
+    setTranscript('');
+    try {
+      recognitionRef.current?.start();
+    } catch (e) {
+      console.log('Speech recognition not available, using demo mode');
+    }
   };
 
   const stopRecording = () => {
     setIsRecording(false);
-    setIsProcessing(true);
+    try {
+      recognitionRef.current?.stop();
+    } catch (e) {
+      // Ignore
+    }
     
-    // Simulate processing delay
-    setTimeout(() => {
-      const mockTranscriptions = {
-        morning: "Today I want to review the project proposal, have a team standup meeting, finish the report draft, and do some exercise. I also want to read for 30 minutes.",
-        evening: "I completed the team standup and finished the report draft. I missed the exercise session. Today I felt productive and focused."
-      };
-      
-      onTranscriptionComplete(mockTranscriptions[type]);
-      setIsProcessing(false);
-      onClose();
-    }, 1500);
+    // Use transcript if we have one, otherwise use a demo transcript
+    const finalTranscript = transcript.trim() || getDemoTranscript(type);
+    onTranscriptionComplete(finalTranscript);
+  };
+
+  const getDemoTranscript = (recordingType: 'morning' | 'evening') => {
+    if (recordingType === 'morning') {
+      return "Today I want to review the project proposal, have a team standup meeting, finish the report draft, do some exercise, and read for 30 minutes.";
+    }
+    return "I completed the team standup and finished the report draft. I missed the exercise session because I had an unexpected meeting. Today I felt productive but a bit tired.";
   };
 
   if (!isOpen) return null;
@@ -98,13 +146,22 @@ export function VoiceRecorder({ onTranscriptionComplete, isOpen, onClose, type }
 
           <div className="text-center">
             {isRecording && (
-              <p className="text-2xl font-mono text-foreground">{formatDuration(duration)}</p>
+              <>
+                <p className="text-2xl font-mono text-foreground">{formatDuration(duration)}</p>
+                {transcript && (
+                  <p className="text-sm text-muted-foreground mt-2 max-w-xs line-clamp-2">
+                    "{transcript.slice(-100)}..."
+                  </p>
+                )}
+              </>
             )}
             {isProcessing && (
-              <p className="text-muted-foreground">Processing your thoughts...</p>
+              <p className="text-muted-foreground">AI is processing your thoughts...</p>
             )}
             {!isRecording && !isProcessing && (
-              <p className="text-muted-foreground text-sm">Tap to start recording</p>
+              <p className="text-muted-foreground text-sm">
+                {hasRecognition ? 'Tap to start recording' : 'Tap to use demo input'}
+              </p>
             )}
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, Check, X, Clock } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Check, X, Clock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TaskList } from '@/components/TaskList';
 import { useJournalData } from '@/hooks/useJournalData';
@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 
 const DailyJournal = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const { getTasksForDate, getReflectionForDate, updateTaskStatus } = useJournalData();
+  const { getTasksForDate, getReflectionForDate, updateTaskStatus, isLoading } = useJournalData();
 
   const dateString = selectedDate.toISOString().split('T')[0];
   const tasks = getTasksForDate(dateString);
@@ -34,6 +34,14 @@ const DailyJournal = () => {
       day: 'numeric' 
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen gradient-warm flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-warm">
@@ -115,9 +123,9 @@ const DailyJournal = () => {
               )}
             </div>
             
-            {reflection.reflectionSummary ? (
+            {reflection.reflection_summary ? (
               <p className="text-sm text-muted-foreground leading-relaxed italic">
-                "{reflection.reflectionSummary}"
+                "{reflection.reflection_summary}"
               </p>
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -129,16 +137,16 @@ const DailyJournal = () => {
             <div className="pt-2 border-t border-border">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-muted-foreground">Completion Rate</span>
-                <span className="font-medium">{reflection.completionRate}%</span>
+                <span className="font-medium">{reflection.completion_rate}%</span>
               </div>
               <div className="h-2 bg-secondary rounded-full overflow-hidden">
                 <div 
                   className={cn(
                     "h-full rounded-full transition-all duration-500",
-                    reflection.completionRate >= 80 ? "bg-success" :
-                    reflection.completionRate >= 50 ? "bg-accent" : "bg-muted-foreground"
+                    reflection.completion_rate >= 80 ? "bg-success" :
+                    reflection.completion_rate >= 50 ? "bg-accent" : "bg-muted-foreground"
                   )}
-                  style={{ width: `${reflection.completionRate}%` }}
+                  style={{ width: `${reflection.completion_rate}%` }}
                 />
               </div>
             </div>

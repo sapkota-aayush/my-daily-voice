@@ -1,44 +1,48 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sun, Moon, Calendar, BarChart3, Mic } from 'lucide-react';
+import { Sun, Moon, Calendar, BarChart3, Mic, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
 import { ProgressCard } from '@/components/ProgressCard';
 import { useJournalData } from '@/hooks/useJournalData';
-import { extractTasksFromText, extractMoodFromText } from '@/lib/mockAI';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [recordingType, setRecordingType] = useState<'morning' | 'evening' | null>(null);
-  const { addTasks, recordEveningCheckIn, getTasksForDate, getTodayProgress } = useJournalData();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { processMorningPlan, processEveningCheckIn, getTodayProgress, isLoading } = useJournalData();
   const { toast } = useToast();
 
-  const today = new Date().toISOString().split('T')[0];
   const progress = getTodayProgress();
-  const todayTasks = getTasksForDate(today);
 
-  const handleTranscriptionComplete = (text: string) => {
-    if (recordingType === 'morning') {
-      const tasks = extractTasksFromText(text);
-      addTasks(tasks, today);
+  const handleTranscriptionComplete = async (text: string) => {
+    setIsProcessing(true);
+    
+    try {
+      if (recordingType === 'morning') {
+        const tasks = await processMorningPlan(text);
+        toast({
+          title: "Morning plan recorded",
+          description: `AI extracted ${tasks?.length || 0} tasks for today`,
+        });
+      } else if (recordingType === 'evening') {
+        const result = await processEveningCheckIn(text);
+        toast({
+          title: "Evening check-in complete",
+          description: `Mood: ${result.mood} • ${result.completionRate}% completion`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error processing:', error);
       toast({
-        title: "Morning plan recorded",
-        description: `Added ${tasks.length} tasks for today`,
+        title: "Processing failed",
+        description: error.message || "Please try again",
+        variant: "destructive",
       });
-    } else if (recordingType === 'evening') {
-      // For demo, mark some tasks as completed/missed randomly
-      const pending = todayTasks.filter(t => t.status === 'pending');
-      const completed = pending.slice(0, Math.ceil(pending.length * 0.7)).map(t => t.id);
-      const missed = pending.slice(Math.ceil(pending.length * 0.7)).map(t => t.id);
-      const mood = extractMoodFromText(text);
-      
-      recordEveningCheckIn(today, completed, missed, mood);
-      toast({
-        title: "Evening check-in complete",
-        description: "Your day has been reflected upon",
-      });
+    } finally {
+      setIsProcessing(false);
+      setRecordingType(null);
     }
-    setRecordingType(null);
   };
 
   const formatDate = (date: Date) => {
@@ -48,6 +52,14 @@ const Index = () => {
       day: 'numeric' 
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen gradient-warm flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-warm">
@@ -126,7 +138,7 @@ const Index = () => {
         <div className="bg-card/50 rounded-xl p-4 border border-border/50">
           <p className="text-sm text-muted-foreground text-center">
             <Mic className="w-4 h-4 inline-block mr-1 -mt-0.5" />
-            Tip: Speak naturally. Say "Today I want to..." for your morning plan.
+            Speak naturally. AI will extract your tasks and analyze your mood.
           </p>
         </div>
       </div>
@@ -135,8 +147,9 @@ const Index = () => {
       <VoiceRecorder
         isOpen={recordingType !== null}
         type={recordingType || 'morning'}
-        onClose={() => setRecordingType(null)}
+        onClose={() => !isProcessing && setRecordingType(null)}
         onTranscriptionComplete={handleTranscriptionComplete}
+        isProcessing={isProcessing}
       />
     </div>
   );
