@@ -1,4 +1,4 @@
-import { Task } from '@/types/journal';
+import { Task } from '@/hooks/useJournalData';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Check, X } from 'lucide-react';

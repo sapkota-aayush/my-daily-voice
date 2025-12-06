@@ -14,7 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_reflections: {
+        Row: {
+          completion_rate: number | null
+          created_at: string
+          date: string
+          evening_checkin_recorded: boolean | null
+          id: string
+          mood: string | null
+          morning_plan_recorded: boolean | null
+          reflection_summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          completion_rate?: number | null
+          created_at?: string
+          date: string
+          evening_checkin_recorded?: boolean | null
+          id?: string
+          mood?: string | null
+          morning_plan_recorded?: boolean | null
+          reflection_summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          completion_rate?: number | null
+          created_at?: string
+          date?: string
+          evening_checkin_recorded?: boolean | null
+          id?: string
+          mood?: string | null
+          morning_plan_recorded?: boolean | null
+          reflection_summary?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          name: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          name: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          name?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
