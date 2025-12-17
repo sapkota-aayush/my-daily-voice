@@ -26,5 +26,3 @@ export interface WeeklySummary {
   weeklyHighlight: string;
   aiInsight: string;
 }
-
-export type RecordingType = 'morning' | 'evening';
