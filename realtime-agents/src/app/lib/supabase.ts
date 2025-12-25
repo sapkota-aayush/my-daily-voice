@@ -18,6 +18,10 @@ function getSupabaseClient(): SupabaseClient {
     );
   }
 
+  // Get the site URL from environment or use current origin
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 
+    (typeof window !== 'undefined' ? window.location.origin : '');
+
   supabaseClient = createClient(url, key, {
     auth: {
       persistSession: true,
@@ -25,6 +29,7 @@ function getSupabaseClient(): SupabaseClient {
       detectSessionInUrl: true,
       storage: typeof window !== 'undefined' ? window.localStorage : undefined,
       flowType: 'pkce',
+      redirectTo: siteUrl ? `${siteUrl}/auth/callback` : undefined,
     },
   });
 
