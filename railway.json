@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "cd realtime-agents && npm start"
+    "startCommand": "cd realtime-agents && node .next/standalone/server.js"
   }
 }
 
