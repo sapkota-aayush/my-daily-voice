@@ -33,7 +33,7 @@ export default function HomePage() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [router]);
+  }, []);
   
   const rotatingRealizedTexts = [
     "Today I realized...",

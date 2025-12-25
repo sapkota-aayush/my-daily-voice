@@ -11,11 +11,19 @@ function getSupabaseClient(): SupabaseClient {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
-    throw new Error(
-      'Supabase environment variables are missing!\n' +
-      'Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local\n' +
-      'Then restart your dev server: npm run dev'
-    );
+    // In production, log error but don't crash - return a mock client
+    if (typeof window !== 'undefined') {
+      console.error('Supabase environment variables are missing!');
+    }
+    // Return a minimal mock client to prevent crashes
+    return {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        signOut: async () => ({ error: null }),
+        getUser: async () => ({ data: { user: null }, error: null }),
+      },
+    } as any;
   }
 
   // Get the site URL from environment or use current origin
