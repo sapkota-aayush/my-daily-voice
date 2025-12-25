@@ -2,8 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  // Enable standalone output for better deployment
-  output: 'standalone',
+  // Standalone output for Railway, but Vercel doesn't need it
+  // output: 'standalone', // Commented out for Vercel deployment
   // Disable ESLint during build for deployment (can fix linting issues later)
   eslint: {
     ignoreDuringBuilds: true,
