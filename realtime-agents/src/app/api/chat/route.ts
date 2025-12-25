@@ -23,9 +23,12 @@ import {
   type ChatTestMessage,
 } from '@/app/lib/redis';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization - only create client when needed (not during build)
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 /**
  * Generate conversational response using experience memories
@@ -88,6 +91,7 @@ Ask the user what's on their mind to expand further. Keep it brief and open-ende
 "Thanks for sharing all of that. What's on your mind that you'd like to explore further?"`;
 
     try {
+      const openai = getOpenAIClient();
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [

@@ -10,9 +10,12 @@ import {
   type ChatTestMessage,
 } from '@/app/lib/redis';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization - only create client when needed (not during build)
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 /**
  * Generate conversational response using experience memories
@@ -75,6 +78,7 @@ Ask the user what's on their mind to expand further. Keep it brief and open-ende
 "Thanks for sharing all of that. What's on your mind that you'd like to explore further?"`;
 
     try {
+      const openai = getOpenAIClient();
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -245,6 +249,7 @@ If no → add a reaction sentence.
     if (startsWithQuestion || (hasQuestionMark && sentences.length === 1)) {
       console.warn('[Response] Missing reaction before question. Regenerating...');
       const reactionPrompt = `${prompt}\n\n⚠️ You must include ONE human reaction sentence BEFORE the question. React to what the user MEANS, not what they said. Then ask a question that builds from that reaction.`;
+      const openai = getOpenAIClient();
       const retry = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -291,7 +296,8 @@ If no → add a reaction sentence.
           console.warn(`[Response] Memory mention exceeded 8 words (${wordCount} words): ${clause}`);
           // Regenerate with stricter constraint
           const strictPrompt = `${prompt}\n\n⚠️ Your memory mention was too long. Keep it to ONE CLAUSE, MAX 8 WORDS.`;
-          const retry = await openai.chat.completions.create({
+          const openai = getOpenAIClient();
+      const retry = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [
               {
@@ -315,6 +321,7 @@ If no → add a reaction sentence.
     if (hasMemoryMention && !shouldMentionMemory) {
       console.warn('[Response] AI included memory mention when it should not have. Regenerating...');
       const noMemoryPrompt = `${prompt}\n\n⚠️ Do NOT mention any memories explicitly. Let memory influence your question subtly instead.`;
+      const openai = getOpenAIClient();
       const retry = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [

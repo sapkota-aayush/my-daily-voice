@@ -5,9 +5,12 @@ import { cookies } from 'next/headers';
 import OpenAI from 'openai';
 import { getWeeklyMetrics, setWeeklyMetrics, getWeekStartDate } from '@/app/lib/redis';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization - only create client when needed (not during build)
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 interface JournalEntry {
   date: string;
@@ -224,6 +227,7 @@ Return JSON in this exact format:
   }
 }`;
 
+    const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
