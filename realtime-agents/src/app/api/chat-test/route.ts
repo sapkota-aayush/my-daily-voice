@@ -12,8 +12,12 @@ import {
 // Lazy initialization - only create client when needed (not during build)
 async function getOpenAIClient() {
   const { default: OpenAI } = await import('openai');
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY is not set. Please set it in environment variables.');
+  }
   return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: apiKey,
   });
 }
 
@@ -354,6 +358,10 @@ If no → add a reaction sentence.
     return "Thanks for sharing. What would you like to explore?";
   }
 }
+
+// Force dynamic rendering to prevent build-time analysis
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * Two-Agent Architecture:

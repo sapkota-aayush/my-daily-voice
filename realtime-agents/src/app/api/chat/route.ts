@@ -365,6 +365,10 @@ If no → add a reaction sentence.
   }
 }
 
+// Force dynamic rendering to prevent build-time analysis
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * Main Chat Endpoint - Unified System
  * Same logic as /api/chat-test
