@@ -8,5 +8,5 @@ cmds = ["cd realtime-agents && npm install"]
 cmds = ["cd realtime-agents && npm run build"]
 
 [start]
-cmd = "cd realtime-agents && npm start"
+cmd = "cd realtime-agents && node .next/standalone/server.js"
 
