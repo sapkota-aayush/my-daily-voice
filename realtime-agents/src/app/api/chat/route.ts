@@ -24,22 +24,9 @@ import {
 
 // Lazy initialization - only create client when needed (not during build)
 async function getOpenAIClient() {
-  // Skip during build - Next.js will analyze this code
-  if (process.env.NEXT_PHASE === 'phase-production-build') {
-    // Return a mock client during build
-    return {
-      chat: {
-        completions: {
-          create: async () => ({ choices: [{ message: { content: '' } }] }),
-        },
-      },
-    } as any;
-  }
   const { default: OpenAI } = await import('openai');
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY is not set. Please set it in environment variables.');
-  }
+  // Use dummy key during build, real key at runtime
+  const apiKey = process.env.OPENAI_API_KEY || 'sk-dummy-key-for-build';
   return new OpenAI({
     apiKey: apiKey,
   });
