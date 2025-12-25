@@ -3,8 +3,8 @@
   "build": {
     "builder": "NIXPACKS"
   },
-  "source": {
-    "rootDirectory": "realtime-agents"
+  "deploy": {
+    "startCommand": "cd realtime-agents && npm start"
   }
 }
 
