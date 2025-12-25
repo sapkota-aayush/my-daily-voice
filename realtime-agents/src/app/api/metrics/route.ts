@@ -2,11 +2,12 @@ import { NextResponse } from 'next/server';
 import { getAuthenticatedUserId } from '@/app/lib/auth';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
-import OpenAI from 'openai';
+// OpenAI imported dynamically to avoid build-time execution
 import { getWeeklyMetrics, setWeeklyMetrics, getWeekStartDate } from '@/app/lib/redis';
 
 // Lazy initialization - only create client when needed (not during build)
-function getOpenAIClient() {
+async function getOpenAIClient() {
+  const { default: OpenAI } = await import('openai');
   return new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
@@ -227,7 +228,7 @@ Return JSON in this exact format:
   }
 }`;
 
-    const openai = getOpenAIClient();
+    const openai = await getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
