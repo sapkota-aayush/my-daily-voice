@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import { runOneTimeMemoryAgent, extractStructuredJournal, type JournalExtraction, type ExperienceMemory } from '@/app/lib/memoryAgent';
 import { 
   getChatTestConversation, 
@@ -11,7 +10,8 @@ import {
 } from '@/app/lib/redis';
 
 // Lazy initialization - only create client when needed (not during build)
-function getOpenAIClient() {
+async function getOpenAIClient() {
+  const { default: OpenAI } = await import('openai');
   return new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
@@ -78,7 +78,7 @@ Ask the user what's on their mind to expand further. Keep it brief and open-ende
 "Thanks for sharing all of that. What's on your mind that you'd like to explore further?"`;
 
     try {
-      const openai = getOpenAIClient();
+      const openai = await getOpenAIClient();
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
