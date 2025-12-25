@@ -262,7 +262,6 @@ If no → add a reaction sentence.
     
     // If response starts with question or only has question without reaction, regenerate
     if (startsWithQuestion || (hasQuestionMark && sentences.length === 1)) {
-      console.warn('[Response] Missing reaction before question. Regenerating...');
       const reactionPrompt = `${prompt}\n\n⚠️ You must include ONE human reaction sentence BEFORE the question. React to what the user MEANS, not what they said. Then ask a question that builds from that reaction.`;
       const retry = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -307,7 +306,6 @@ If no → add a reaction sentence.
         const wordCount = clause.split(/\s+/).length;
         
         if (wordCount > 8) {
-          console.warn(`[Response] Memory mention exceeded 8 words (${wordCount} words): ${clause}`);
           // Regenerate with stricter constraint
           const strictPrompt = `${prompt}\n\n⚠️ Your memory mention was too long. Keep it to ONE CLAUSE, MAX 8 WORDS.`;
           const retry = await openai.chat.completions.create({
@@ -332,7 +330,6 @@ If no → add a reaction sentence.
     
     // If memory shouldn't be mentioned but AI included it, regenerate
     if (hasMemoryMention && !shouldMentionMemory) {
-      console.warn('[Response] AI included memory mention when it should not have. Regenerating...');
       const noMemoryPrompt = `${prompt}\n\n⚠️ Do NOT mention any memories explicitly. Let memory influence your question subtly instead.`;
       const retry = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -554,25 +551,10 @@ export async function POST(req: NextRequest) {
       !message.toLowerCase().trim().match(/^(hey|hi|hello|thanks|thank you|ok|okay|yes|no|yeah|yep)$/i)
     );
     
-    console.log('[Chat] Initial journal entry check:', {
-      isInitialJournalEntry,
-      historyLength: effectiveHistory.length,
-      messageLength: message.length,
-      wordCount: message.split(/\s+/).length,
-      firstMessage: effectiveHistory[0]?.content?.substring(0, 50),
-      hasCachedMemories,
-      isLongMessage,
-      isGreetingResponse,
-      reason: isInitialJournalEntry ? 'FORCING batch fetch - long message with no cached memories' : 'Not triggering batch fetch',
-    });
-    
     let structuredExtraction: JournalExtraction | undefined = undefined;
     
     if (isInitialJournalEntry) {
       // STRUCTURED EXTRACTION: Extract 4 categories (Events, Projects, Patterns, Emotions)
-      console.log('\n========== STRUCTURED EXTRACTION ==========');
-      console.log('[Chat] Processing initial journal entry - extracting structured information');
-      console.log('[Chat] User journal entry:', message.substring(0, 100) + '...\n');
       
       const extractionResult = await extractStructuredJournal(message);
       structuredExtraction = extractionResult.extraction;
@@ -620,7 +602,6 @@ export async function POST(req: NextRequest) {
       });
     } else {
       // NORMAL FLOW: Fetch experience memories from Redis and generate conversational response
-      console.log('[Chat] 🔍 Fetching experience memories from Redis...');
       
       // Get experience memories from Redis (no need for runMemoryAgent - just fetch directly)
       const experienceMemories = await getExperienceMemories(userId, date);

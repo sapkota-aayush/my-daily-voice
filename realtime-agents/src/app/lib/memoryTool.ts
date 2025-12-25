@@ -31,7 +31,6 @@ export const getResponseWithMemory = tool({
     if (!trimmedMessage || trimmedMessage.length < 3) {
       // Allow greetings even if short
       if (!isGreetingMessage) {
-      console.log('[Memory Tool] Ignoring very short message:', trimmedMessage);
       return { response: '' }; // Return empty - agent won't speak
       }
     }
@@ -43,7 +42,6 @@ export const getResponseWithMemory = tool({
       const singleWord = normalizedMessage;
       // Common false trigger words (but NOT greetings)
       if (!isGreetingMessage && ['what', 'huh', 'um', 'uh', 'ah', 'oh', 'yeah', 'yes', 'no', 'ok', 'okay'].includes(singleWord)) {
-        console.log('[Memory Tool] Ignoring single word false trigger:', singleWord);
         return { response: '' }; // Return empty - agent won't speak
       }
     }
@@ -56,18 +54,13 @@ export const getResponseWithMemory = tool({
         const { data: { user }, error } = await supabase.auth.getUser();
         if (!error && user?.id) {
           userId = user.id;
-          console.log('[Memory Tool] Got userId from Supabase:', userId);
         } else {
-          console.warn('[Memory Tool] Could not get userId from Supabase, using default');
           userId = userId || 'default-user';
         }
       } catch (err) {
-        console.warn('[Memory Tool] Error getting userId:', err);
         userId = userId || 'default-user';
       }
     }
-    
-    console.log('[Memory Tool] Using userId:', userId);
     
     const history = (details?.context as any)?.history || [];
     
@@ -122,10 +115,6 @@ export const getResponseWithMemory = tool({
     });
     
     if (isEcho) {
-      console.log('[Memory Tool] ⚠️ Detected echo/feedback - user message matches recent AI response. Ignoring.');
-      console.log('[Memory Tool] User message:', trimmedMessage.substring(0, 50));
-      console.log('[Memory Tool] Matched AI message:', recentAssistantMessages.find((aiMsg: string) => {
-        const aiStart = aiMsg.substring(0, Math.min(30, aiMsg.length));
         const userStart = userMessageNormalized.substring(0, Math.min(30, userMessageNormalized.length));
         return userMessageNormalized.includes(aiStart) || aiMsg.includes(userStart);
       }));
@@ -137,13 +126,7 @@ export const getResponseWithMemory = tool({
     // This ensures the API treats it as an initial greeting
     const effectiveHistory = (isGreetingMessage && conversationHistory.length === 0) ? [] : conversationHistory;
     
-    if (isGreetingMessage && conversationHistory.length === 0) {
-      console.log('[Memory Tool] Initial greeting detected - passing empty history to API');
-    }
-    
     try {
-      console.log('[Memory Tool] Calling API with:', {
-        message: trimmedMessage.substring(0, 50),
         userId,
         conversationHistoryLength: effectiveHistory.length,
         isGreeting: isGreetingMessage,
@@ -166,8 +149,6 @@ export const getResponseWithMemory = tool({
       }
       
       const data = await response.json();
-      console.log('[Memory Tool] API response:', {
-        hasMessage: !!data.message,
         messageLength: data.message?.length || 0,
         metadata: data.metadata,
       });

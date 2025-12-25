@@ -1076,14 +1076,9 @@ export async function runMemoryAgent(
   let shouldUseMemory = false;
   
   if (date) {
-    console.log(`[Memory Agent] 🔍 Fetching experience memories from Redis (NO MEM0 SEARCHES)...`);
     const experienceMemories = await getExperienceMemories(userId, date);
     
     if (experienceMemories && experienceMemories.length > 0) {
-      console.log(`[Memory Agent] ✅ FETCHED FROM REDIS - Using ${experienceMemories.length} experience memories`);
-      experienceMemories.forEach((mem, i) => {
-        console.log(`[Memory Agent]   ${i + 1}. ${mem.title}`);
-      });
       
       // Format experience memories for use in conversation
       // Use core_fact + 1-2 key_details
@@ -1096,13 +1091,11 @@ export async function runMemoryAgent(
       memoriesFound = experienceMemories.length;
       shouldUseMemory = true;
     } else {
-      console.log(`[Memory Agent] ⚠️ No experience memories found in Redis`);
       memorySummary = null;
       memoriesFound = 0;
       shouldUseMemory = false;
     }
   } else {
-    console.log(`[Memory Agent] ⚠️ No date provided - cannot fetch experience memories`);
     memorySummary = null;
     memoriesFound = 0;
     shouldUseMemory = false;

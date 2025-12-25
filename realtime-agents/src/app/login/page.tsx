@@ -31,21 +31,9 @@ export default function LoginPage() {
   const handleOAuthLogin = async (provider: 'google' | 'apple' | 'facebook') => {
     setLoading(true);
     try {
-      // Force production URL - never use localhost in production
-      let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-      
-      // If NEXT_PUBLIC_APP_URL is not set, use current origin (but log warning)
-      if (!baseUrl && typeof window !== 'undefined') {
-        baseUrl = window.location.origin;
-        // Warn if we're in production but using window.location
-        if (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1')) {
-          console.warn('[OAuth] NEXT_PUBLIC_APP_URL not set! Using:', baseUrl);
-        }
-      }
-      
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+        (typeof window !== 'undefined' ? window.location.origin : '');
       const redirectUrl = `${baseUrl}/auth/callback`;
-      console.log('[OAuth] Redirect URL:', redirectUrl);
-      console.log('[OAuth] NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
       
       // Only enable Google for now
       if (provider === 'google') {

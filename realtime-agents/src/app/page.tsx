@@ -14,16 +14,13 @@ export default function HomePage() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        console.log('[ROOT PAGE] Checking auth...');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        console.log('[ROOT PAGE] Auth check result:', { hasSession: !!session, error });
+        const { data: { session } } = await supabase.auth.getSession();
         setIsAuthenticated(!!session);
       } catch (error) {
-        console.error('[ROOT PAGE] Error checking auth:', error);
+        console.error('Error checking auth:', error);
         setIsAuthenticated(false);
       } finally {
         setCheckingAuth(false);
-        console.log('[ROOT PAGE] Auth check complete, showing dashboard');
       }
     }
     checkAuth();

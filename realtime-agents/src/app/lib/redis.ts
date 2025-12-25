@@ -252,12 +252,8 @@ export async function getCachedMemoryForTopic(
 ): Promise<{ memories: any[]; summary: string | null } | null> {
   const cached = await getSessionMemories(userId, date);
   if (!cached || cached.length === 0) {
-    console.log(`[Redis Cache] No cached memories found for ${userId}:${date}`);
     return null;
   }
-  
-  console.log(`[Redis Cache] Checking cache for topic: "${topic}"`);
-  console.log(`[Redis Cache] Available cached topics: ${cached.map(m => `"${m.topic}"`).join(', ')}`);
   
   // Find memory for this topic (fuzzy match - more lenient)
   const topicLower = topic.toLowerCase().trim();
@@ -281,7 +277,6 @@ export async function getCachedMemoryForTopic(
   
   // If still no match, return ALL cached memories combined (user is talking about something related)
   if (!memoryEntry && cached.length > 0) {
-    console.log(`[Redis Cache] No exact match for "${topic}", using all cached memories`);
     const allMemories = cached.flatMap(m => m.memories);
     const allSummaries = cached.map(m => m.summary).filter(Boolean).join(' ');
     return {
@@ -291,14 +286,12 @@ export async function getCachedMemoryForTopic(
   }
   
   if (memoryEntry) {
-    console.log(`[Redis Cache] ✅ Found cached memory for topic "${topic}" -> "${memoryEntry.topic}"`);
     return {
       memories: memoryEntry.memories,
       summary: memoryEntry.summary,
     };
   }
   
-  console.log(`[Redis Cache] ❌ No match found for topic "${topic}"`);
   return null;
 }
 
@@ -359,10 +352,8 @@ export async function getExperienceMemories(
 ): Promise<any[] | null> {
   const redis = getRedisClient();
   const key = `memory:experiences:${userId}:${date}`;
-  console.log(`[Redis] Getting experience memories: ${key}`);
   const data = await redis.get(key);
   if (!data) {
-    console.log(`[Redis] ⚠️ No data found for key: ${key}`);
     return null;
   }
   try {
@@ -376,7 +367,6 @@ export async function getExperienceMemories(
     
     // Ensure it's an array
     if (Array.isArray(parsed)) {
-      console.log(`[Redis] ✅ Found ${parsed.length} memories`);
       return parsed;
     } else {
       console.error(`[Redis] ⚠️ Data is not an array:`, typeof parsed);
@@ -399,7 +389,6 @@ export async function clearExperienceMemories(
   const redis = getRedisClient();
   const key = `memory:experiences:${userId}:${date}`;
   await redis.del(key);
-  console.log(`[Redis] ✅ Cleared experience memories: ${key}`);
 }
 
 /**

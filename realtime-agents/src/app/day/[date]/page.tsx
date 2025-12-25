@@ -389,7 +389,6 @@ function DayViewContent() {
           // Get authenticated user ID
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) {
-            console.warn('User not authenticated, skipping conversation restore');
             return;
           }
           const userId = user.id;
@@ -818,15 +817,7 @@ function DayViewContent() {
   // Rebuild agent ONLY when necessary (after mood confirmation with theme-specific memories)
   // This prevents constant glitching from too many rebuilds
   const rebuildAgentWithFreshState = async (updatedState: any) => {
-    console.log('REBUILD FUNCTION CALLED:', {
-      hasSessionId: !!sessionIdRef.current,
-      isRebuilding: isRebuildingRef.current,
-      phase: updatedState?.session_phase,
-      memoryCount: updatedState?.yesterday_context?.length || 0,
-    });
-    
     if (!sessionIdRef.current) {
-      console.error('CANNOT REBUILD: No sessionId');
       return;
     }
     

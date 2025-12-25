@@ -31,15 +31,6 @@ export function createJournalAgentWithContext(
   const memoryCount = conversationState?.yesterday_context?.length || 0;
   const memoryListInInstructions = instructions.includes('YOUR PAST JOURNAL MEMORIES');
   
-  console.log('AGENT CREATED:', {
-    phase: conversationState?.session_phase || 'unknown',
-    hasMemories: memoryListInInstructions,
-    memoryCount,
-    instructionsLength: instructions.length,
-    instructionsPreview: instructions.substring(0, 500),
-    memoriesInState: conversationState?.yesterday_context?.slice(0, 3),
-  });
-  
   // If we're in reflecting/questioning phase but no memories in instructions, that's a problem
   if ((conversationState?.session_phase === 'reflecting' || conversationState?.session_phase === 'questioning') && !memoryListInInstructions) {
     console.error('ERROR: Agent in reflecting/questioning phase but NO MEMORIES in instructions!');

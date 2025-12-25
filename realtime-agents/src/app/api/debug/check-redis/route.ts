@@ -7,7 +7,6 @@ export async function GET(req: NextRequest) {
     const userId = searchParams.get('userId') || 'default-user';
     const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
     
-    console.log(`[Debug] Checking Redis for userId: ${userId}, date: ${date}`);
     
     // Get raw data from Redis to see what it returns
     const redis = getRedisClient();
