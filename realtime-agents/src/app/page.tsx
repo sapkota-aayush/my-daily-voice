@@ -2,22 +2,13 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { supabase } from '@/app/lib/supabase';
 
 export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to dashboard (it will handle auth checks)
-    async function redirectToDashboard() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        router.replace('/dashboard');
-      } else {
-        router.replace('/login');
-      }
-    }
-    redirectToDashboard();
+    // Always redirect to dashboard - it will show sign-in option if not authenticated
+    router.replace('/dashboard');
   }, [router]);
 
   // Show loading while redirecting

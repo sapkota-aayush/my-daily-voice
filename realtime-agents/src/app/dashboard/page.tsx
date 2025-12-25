@@ -7,21 +7,32 @@ import { supabase } from '@/app/lib/supabase';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   
-  // Check authentication
+  // Check authentication - but don't redirect, just track state
   useEffect(() => {
     async function checkAuth() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          router.push('/login');
-        }
+        setIsAuthenticated(!!session);
       } catch (error) {
         console.error('Error checking auth:', error);
-        router.push('/login');
+        setIsAuthenticated(false);
+      } finally {
+        setCheckingAuth(false);
       }
     }
     checkAuth();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [router]);
   
   const rotatingRealizedTexts = [
@@ -49,14 +60,31 @@ export default function DashboardPage() {
   }, [rotatingRealizedTexts.length]);
 
   const handleGetStarted = async () => {
-    // Authentication temporarily disabled for testing
+    if (isAuthenticated) {
       router.push('/calendar');
+    } else {
+      // Redirect to login if not authenticated
+      router.push('/login');
+    }
+  };
+
+  const handleSignIn = () => {
+    router.push('/login');
   };
   
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    setIsAuthenticated(false);
   };
+
+  // Show loading while checking auth
+  if (checkingAuth) {
+    return (
+      <div className="bg-white min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-amber-400/30 border-t-amber-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white text-amber-900/80 font-sans antialiased selection:bg-amber-200 selection:text-amber-900 overflow-x-hidden min-h-screen flex flex-col">
@@ -97,12 +125,21 @@ export default function DashboardPage() {
             Pricing
             <span className="absolute -bottom-1 left-0 w-0 h-px bg-amber-500 transition-all duration-300 group-hover:w-full"></span>
           </Link>
-          <button 
-            onClick={handleLogout}
-            className="px-6 py-2.5 rounded-full border border-amber-200/60 hover:border-amber-300 hover:bg-amber-50/80 text-amber-800/90 hover:text-amber-900 transition-all duration-300 backdrop-blur-sm bg-white/60"
-          >
-            Sign out
-          </button>
+          {isAuthenticated ? (
+            <button 
+              onClick={handleLogout}
+              className="px-6 py-2.5 rounded-full border border-amber-200/60 hover:border-amber-300 hover:bg-amber-50/80 text-amber-800/90 hover:text-amber-900 transition-all duration-300 backdrop-blur-sm bg-white/60"
+            >
+              Sign out
+            </button>
+          ) : (
+            <button 
+              onClick={handleSignIn}
+              className="px-6 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-md hover:shadow-lg"
+            >
+              Sign in
+            </button>
+          )}
         </div>
       </nav>
 
