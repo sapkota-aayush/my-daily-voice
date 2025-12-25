@@ -31,8 +31,10 @@ export default function LoginPage() {
   const handleOAuthLogin = async (provider: 'google' | 'apple' | 'facebook') => {
     setLoading(true);
     try {
-      // Get the current origin for redirect URL
-      const redirectUrl = `${window.location.origin}/auth/callback`;
+      // Use NEXT_PUBLIC_APP_URL if available, otherwise use current origin
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+        (typeof window !== 'undefined' ? window.location.origin : '');
+      const redirectUrl = `${baseUrl}/auth/callback`;
       
       // Only enable Google for now
       if (provider === 'google') {
@@ -91,7 +93,7 @@ export default function LoginPage() {
           <div className="text-center mb-12">
             <div className="flex items-center justify-center gap-2 mb-6">
               <span className="material-symbols-outlined text-4xl text-amber-600">spa</span>
-              <span className="font-serif italic text-4xl font-medium tracking-tight text-amber-900/90">vojur</span>
+              <span className="font-serif italic text-4xl font-medium tracking-tight text-amber-900/90">Muse</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-serif text-amber-900/90 mb-3">
               Welcome back
@@ -145,7 +147,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <p className="text-center text-sm text-amber-800/60 mt-8">
-            By continuing, you agree to vojur's Terms of Service and Privacy Policy
+            By continuing, you agree to Muse's Terms of Service and Privacy Policy
           </p>
         </div>
       </main>
