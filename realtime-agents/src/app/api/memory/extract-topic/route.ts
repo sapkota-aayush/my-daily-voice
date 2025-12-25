@@ -3,8 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 // Lazy initialization - only create client when needed (not during build)
 async function getOpenAIClient() {
   const { default: OpenAI } = await import('openai');
+  const apiKey = process.env.OPENAI_API_KEY || 'dummy-key-for-build';
+  // During build, Next.js might analyze this, so we provide a dummy key
+  // At runtime, this will fail gracefully if the real key is missing
   return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: apiKey,
   });
 }
 
