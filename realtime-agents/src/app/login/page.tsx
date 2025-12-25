@@ -15,7 +15,8 @@ export default function LoginPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          router.push('/dashboard');
+          // If already logged in, redirect to calendar (not dashboard)
+          router.push('/calendar');
           return;
         }
         setCheckingAuth(false);
