@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { cn, getTodayString } from '@/app/lib/utils';
+import { cn, getTodayString, formatDateString } from '@/app/lib/utils';
 import { supabase } from '@/app/lib/supabase';
 import { VoiceOrb, type VoiceStatus } from '@/app/components/VoiceOrb';
 import { useRealtimeSession } from '@/app/hooks/useRealtimeSession';
@@ -34,9 +34,13 @@ function DayViewContent() {
   const [isCapturingSelfie, setIsCapturingSelfie] = useState(false);
   const [isUploadingSelfie, setIsUploadingSelfie] = useState(false);
   const [showCameraMenu, setShowCameraMenu] = useState(false);
+  const [swipeStart, setSwipeStart] = useState<{ x: number; y: number } | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [showSwipeHint, setShowSwipeHint] = useState(true);
   const connectionStatusRef = useRef<string>('DISCONNECTED');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const swipeContainerRef = useRef<HTMLDivElement>(null);
 
   const editorRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -183,12 +187,133 @@ function DayViewContent() {
 
   const isToday = date === getTodayString();
 
+  // Auto-hide swipe hint after 5 seconds
+  useEffect(() => {
+    if (showSwipeHint && !isToday) {
+      const timer = setTimeout(() => {
+        setShowSwipeHint(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSwipeHint, isToday]);
+
   const formattedDate = dateObj.toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
     year: 'numeric',
   });
+
+  // Calculate previous and next dates
+  const getPreviousDate = useCallback((currentDate: string): string => {
+    const [y, m, d] = currentDate.split('-').map(Number);
+    const prevDate = new Date(y, m - 1, d - 1);
+    return formatDateString(prevDate);
+  }, []);
+
+  const getNextDate = useCallback((currentDate: string): string => {
+    const [y, m, d] = currentDate.split('-').map(Number);
+    const nextDate = new Date(y, m - 1, d + 1);
+    const today = new Date();
+    const todayString = formatDateString(today);
+    const nextDateString = formatDateString(nextDate);
+    // Don't allow navigating to future dates
+    return nextDateString <= todayString ? nextDateString : currentDate;
+  }, []);
+
+  // Swipe handlers
+  const handleSwipeStart = useCallback((clientX: number, clientY: number) => {
+    setSwipeStart({ x: clientX, y: clientY });
+    setSwipeOffset(0);
+  }, []);
+
+  const handleSwipeMove = useCallback((clientX: number, clientY: number) => {
+    if (!swipeStart) return;
+    
+    const deltaX = clientX - swipeStart.x;
+    const deltaY = clientY - swipeStart.y;
+    
+    // Only track horizontal swipes (ignore if vertical movement is greater)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+      setSwipeOffset(deltaX);
+    }
+  }, [swipeStart]);
+
+  const handleSwipeEnd = useCallback(() => {
+    if (!swipeStart) return;
+    
+    const threshold = 100; // Minimum swipe distance
+    const currentOffset = swipeOffset;
+    
+    if (Math.abs(currentOffset) > threshold) {
+      if (currentOffset > 0) {
+        // Swipe right - go to previous day
+        const prevDate = getPreviousDate(date);
+        router.push(`/day/${prevDate}`);
+      } else {
+        // Swipe left - go to next day
+        const nextDate = getNextDate(date);
+        if (nextDate !== date) {
+          router.push(`/day/${nextDate}`);
+        }
+      }
+    }
+    
+    setSwipeStart(null);
+    setSwipeOffset(0);
+  }, [swipeStart, swipeOffset, date, getPreviousDate, getNextDate, router]);
+
+  // Touch event handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    handleSwipeStart(touch.clientX, touch.clientY);
+  }, [handleSwipeStart]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    handleSwipeMove(touch.clientX, touch.clientY);
+  }, [handleSwipeMove]);
+
+  const handleTouchEnd = useCallback(() => {
+    handleSwipeEnd();
+  }, [handleSwipeEnd]);
+
+  // Mouse event handlers (for desktop drag)
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    handleSwipeStart(e.clientX, e.clientY);
+  }, [handleSwipeStart]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (swipeStart) {
+      handleSwipeMove(e.clientX, e.clientY);
+    }
+  }, [swipeStart, handleSwipeMove]);
+
+  const handleMouseUp = useCallback(() => {
+    if (swipeStart) {
+      handleSwipeEnd();
+    }
+  }, [swipeStart, handleSwipeEnd]);
+
+  // Add global mouse event listeners for drag
+  useEffect(() => {
+    if (swipeStart) {
+      const handleGlobalMouseMove = (e: MouseEvent) => {
+        handleSwipeMove(e.clientX, e.clientY);
+      };
+      const handleGlobalMouseUp = () => {
+        handleSwipeEnd();
+      };
+      
+      window.addEventListener('mousemove', handleGlobalMouseMove);
+      window.addEventListener('mouseup', handleGlobalMouseUp);
+      
+      return () => {
+        window.removeEventListener('mousemove', handleGlobalMouseMove);
+        window.removeEventListener('mouseup', handleGlobalMouseUp);
+      };
+    }
+  }, [swipeStart, handleSwipeMove, handleSwipeEnd]);
 
 
   // Load existing data - always fetch fresh from database
@@ -1519,7 +1644,18 @@ CRITICAL: You MUST only speak in English. Never respond in any other language.`,
   });
 
   return (
-    <div className="bg-white text-amber-900 font-sans antialiased min-h-screen overflow-x-hidden selection:bg-amber-200 selection:text-amber-900 flex flex-col">
+    <div 
+      ref={swipeContainerRef}
+      className="bg-white text-amber-900 font-sans antialiased min-h-screen overflow-x-hidden selection:bg-amber-200 selection:text-amber-900 flex flex-col relative"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      style={{
+        transform: swipeOffset !== 0 ? `translateX(${swipeOffset}px)` : undefined,
+        transition: swipeStart ? 'none' : 'transform 0.2s ease-out',
+      }}
+    >
       {/* Animated Background Blobs - matching dashboard */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-white via-amber-50/50 to-yellow-50/40"></div>
@@ -1529,14 +1665,58 @@ CRITICAL: You MUST only speak in English. Never respond in any other language.`,
         <div className="absolute -bottom-[20%] left-[20%] w-[60vw] h-[60vw] bg-orange-100/60 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-blob" style={{ animationDelay: '4s' }}></div>
       </div>
 
+
       {/* Header */}
       <header className="fixed top-0 w-full z-40 px-6 md:px-12 py-6 flex items-center justify-between transition-all duration-300">
-        <button 
-          onClick={handleBack}
-          className="flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-amber-600 text-2xl">auto_stories</span>
-        </button>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={handleBack}
+            className="flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-amber-600 text-2xl">auto_stories</span>
+          </button>
+          
+          {/* Date Navigation Buttons */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-lg p-1 border border-amber-200/50 shadow-sm">
+              <button
+                onClick={() => {
+                  const prevDate = getPreviousDate(date);
+                  router.push(`/day/${prevDate}`);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 rounded-md transition-all hover:shadow-sm"
+                title="Previous day"
+              >
+                <span className="material-symbols-outlined text-base">chevron_left</span>
+                <span className="hidden sm:inline">Prev</span>
+              </button>
+              <div className="h-6 w-px bg-amber-200/50"></div>
+              <button
+                onClick={() => {
+                  const nextDate = getNextDate(date);
+                  if (nextDate !== date) {
+                    router.push(`/day/${nextDate}`);
+                  }
+                }}
+                disabled={getNextDate(date) === date}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 rounded-md transition-all hover:shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Next day"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <span className="material-symbols-outlined text-base">chevron_right</span>
+              </button>
+            </div>
+            {/* Go to Calendar Button */}
+            <button
+              onClick={() => router.push('/calendar')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 bg-white/80 backdrop-blur-sm hover:bg-amber-50 rounded-lg border border-amber-200/50 shadow-sm transition-all hover:shadow-md"
+              title="Go to Calendar"
+            >
+              <span className="material-symbols-outlined text-base">calendar_month</span>
+              <span className="hidden md:inline">Calendar</span>
+            </button>
+          </div>
+        </div>
         <div className="flex items-center gap-4">
           {/* Mode Toggle - Chat/Voice */}
           {isToday && (

@@ -18,8 +18,8 @@ export default function AuthCallbackPage() {
             setStatus('success');
         // Clear URL params
           window.history.replaceState({}, '', '/auth/callback');
-            // Redirect to calendar after sign-in
-            setTimeout(() => router.push('/calendar'), 1000);
+            // Redirect to dashboard after sign-in
+            setTimeout(() => router.push('/'), 1000);
       } else if (event === 'SIGNED_OUT') {
           setStatus('error');
           setTimeout(() => router.push('/dashboard?error=no_session'), 2000);
@@ -35,8 +35,8 @@ export default function AuthCallbackPage() {
       } else if (session) {
         setStatus('success');
         window.history.replaceState({}, '', '/auth/callback');
-        // Redirect to calendar after sign-in
-        setTimeout(() => router.push('/calendar'), 1000);
+        // Redirect to dashboard after sign-in
+        setTimeout(() => router.push('/'), 1000);
       }
       // If no session, wait for onAuthStateChange to fire
     });

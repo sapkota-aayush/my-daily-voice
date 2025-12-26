@@ -103,7 +103,7 @@ export default function DashboardPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-amber-50/20 to-transparent pointer-events-none"></div>
         <Link href="/" className="flex items-center gap-2 group cursor-pointer relative z-10">
           <span className="material-symbols-outlined text-3xl text-amber-600 group-hover:text-amber-800 transition-colors duration-500">spa</span>
-          <span className="font-serif italic text-2xl font-medium tracking-tight text-amber-900/90">Muse</span>
+          <span className="font-serif italic text-2xl font-medium tracking-tight text-amber-900/90">Vojur</span>
           <span className="px-2 py-0.5 text-xs font-semibold text-amber-700 bg-amber-100 rounded-full border border-amber-200">
             BETA
           </span>
@@ -171,7 +171,7 @@ export default function DashboardPage() {
               </span>
             </h1>
             <p className="text-lg md:text-2xl text-amber-900/75 max-w-xl leading-relaxed font-serif font-normal mt-2 text-balance animate-fade-up opacity-0" style={{ animationDelay: '0.3s' }}>
-              Talk freely. Reflect gently. Muse is your private sanctuary to untangle your thoughts without judgment.
+              Talk freely. Reflect gently. Vojur is your private sanctuary to untangle your thoughts without judgment.
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4 mt-6">
               <button 
@@ -340,7 +340,7 @@ export default function DashboardPage() {
         <div className="max-w-[1400px] mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-6">
           <Link href="/" className="flex items-center gap-2 opacity-70 hover:opacity-100 transition-all duration-500 cursor-pointer">
             <span className="material-symbols-outlined text-xl text-amber-600">spa</span>
-            <span className="font-serif italic text-lg tracking-wide text-amber-900/90">Muse</span>
+            <span className="font-serif italic text-lg tracking-wide text-amber-900/90">Vojur</span>
           </Link>
           <div className="flex gap-8 text-xs text-amber-800/70 font-medium">
             <a href="#" className="hover:text-amber-900 transition-colors">Privacy</a>
@@ -348,7 +348,7 @@ export default function DashboardPage() {
             <a href="#" className="hover:text-amber-900 transition-colors">Twitter</a>
           </div>
           <p className="text-xs text-amber-800/60 font-medium tracking-wide">
-            © 2024 Muse Inc.
+            © 2024 Vojur Inc.
           </p>
         </div>
       </footer>

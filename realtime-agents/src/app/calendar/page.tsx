@@ -116,7 +116,7 @@ export default function CalendarPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-amber-50/20 to-transparent pointer-events-none"></div>
         <Link href="/dashboard" className="flex items-center gap-2 group cursor-pointer relative z-10">
           <span className="material-symbols-outlined text-3xl text-amber-600 group-hover:text-amber-800 transition-colors duration-500">spa</span>
-          <span className="font-serif italic text-2xl font-medium tracking-tight text-amber-900/90">Muse</span>
+          <span className="font-serif italic text-2xl font-medium tracking-tight text-amber-900/90">Vojur</span>
         </Link>
         <div className="flex items-center gap-4 relative z-10">
           <Link

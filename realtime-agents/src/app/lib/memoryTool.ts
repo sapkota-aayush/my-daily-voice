@@ -115,9 +115,6 @@ export const getResponseWithMemory = tool({
     });
     
     if (isEcho) {
-        const userStart = userMessageNormalized.substring(0, Math.min(30, userMessageNormalized.length));
-        return userMessageNormalized.includes(aiStart) || aiMsg.includes(userStart);
-      }));
       return { response: '' }; // Return empty - agent won't speak
     }
     
@@ -127,11 +124,6 @@ export const getResponseWithMemory = tool({
     const effectiveHistory = (isGreetingMessage && conversationHistory.length === 0) ? [] : conversationHistory;
     
     try {
-        userId,
-        conversationHistoryLength: effectiveHistory.length,
-        isGreeting: isGreetingMessage,
-      });
-      
       // Call server API - it handles initial greeting without memory search
       const response = await fetch('/api/chat-test', {
         method: 'POST',
@@ -149,9 +141,6 @@ export const getResponseWithMemory = tool({
       }
       
       const data = await response.json();
-        messageLength: data.message?.length || 0,
-        metadata: data.metadata,
-      });
       
       return { response: data.message || data.response || '' };
     } catch (error: any) {

@@ -15,8 +15,8 @@ export default function LoginPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          // If already logged in, redirect to calendar (not dashboard)
-          router.push('/calendar');
+          // If already logged in, redirect to dashboard
+          router.push('/');
           return;
         }
         setCheckingAuth(false);
@@ -92,7 +92,7 @@ export default function LoginPage() {
           <div className="text-center mb-12">
             <div className="flex items-center justify-center gap-2 mb-6">
               <span className="material-symbols-outlined text-4xl text-amber-600">spa</span>
-              <span className="font-serif italic text-4xl font-medium tracking-tight text-amber-900/90">Muse</span>
+              <span className="font-serif italic text-4xl font-medium tracking-tight text-amber-900/90">Vojur</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-serif text-amber-900/90 mb-3">
               Welcome back
@@ -146,7 +146,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <p className="text-center text-sm text-amber-800/60 mt-8">
-            By continuing, you agree to Muse's Terms of Service and Privacy Policy
+            By continuing, you agree to Vojur's Terms of Service and Privacy Policy
           </p>
         </div>
       </main>
