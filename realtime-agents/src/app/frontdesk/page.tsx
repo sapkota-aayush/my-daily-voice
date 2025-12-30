@@ -24,6 +24,7 @@ export default function FrontDeskPage() {
   // Auto-load resident when page opens
   useEffect(() => {
     fetchResident(mockResidentId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchResident = async (residentId: string) => {
