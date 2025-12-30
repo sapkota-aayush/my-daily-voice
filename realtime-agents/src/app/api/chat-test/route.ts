@@ -28,6 +28,7 @@ async function generateConversationalResponse(
   userMessage: string,
   experienceMemories: ExperienceMemory[],
   extraction: JournalExtraction,
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [],
   isInitialJournalEntry: boolean = false,
   userId: string = 'default-user',
   date: string = new Date().toISOString().split('T')[0]
@@ -149,6 +150,18 @@ Let this memory influence what you ask, but don't mention it explicitly.`
     : `**Memory to Mention:**
 NONE - User's message does not relate to any stored memories.`;
 
+  // Get last 3 messages for context (avoid repetition)
+  const recentHistory = conversationHistory.slice(-3).map(msg => 
+    `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content.substring(0, 150)}`
+  ).join('\n');
+  
+  // Check if last assistant message was the fallback to avoid repetition
+  const lastAssistantMessage = conversationHistory
+    .filter(msg => msg.role === 'assistant')
+    .slice(-1)[0]?.content || '';
+  const isRepeatingFallback = lastAssistantMessage.includes('Thanks for sharing') && 
+                               lastAssistantMessage.includes('explore');
+
   const prompt = `You are a supportive conversation partner. Follow this EXACT structure:
 
 **Structure (LOCK THIS IN - "React once, then ask once"):**
@@ -157,7 +170,12 @@ NONE - User's message does not relate to any stored memories.`;
 2. One open-ended question - builds FROM the reaction, invites depth
 3. Stop
 
-**User's Current Message:**
+${recentHistory ? `**Recent Conversation Context:**
+${recentHistory}
+
+**IMPORTANT:** Do NOT repeat what you just said. Build on the conversation naturally.${isRepeatingFallback ? ' DO NOT use generic phrases like "Thanks for sharing. What would you like to explore?" - the user already responded to that. Instead, react to what they just said.' : ''}
+
+` : ''}**User's Current Message:**
 ${userMessage.substring(0, 300)}
 
 **Available Memories (for context - use to inform reaction/question, mention sparingly):**
@@ -223,6 +241,7 @@ If no → add a reaction sentence.
 **Your Response (follow structure exactly - React once, then ask once):**`}`;
 
   try {
+    const openai = await getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -530,14 +549,9 @@ export async function POST(req: NextRequest) {
     // Check if experience memories already exist in Redis
     const hasCachedMemories = !!(await getExperienceMemories(userId, date));
     const isLongMessage = message.length > 100 && message.split(/\s+/).length > 15;
-    const isGreetingResponse = effectiveHistory.length > 0 && 
-      effectiveHistory[0]?.role === 'assistant' && 
-      (effectiveHistory[0]?.content?.includes('mood') || 
-       effectiveHistory[0]?.content?.includes('Tell me') ||
-       effectiveHistory[0]?.content?.includes('everything'));
-    
     // FORCE batch fetch if: long message + no cached memories
     // This ensures we always extract multiple topics and store memories properly
+    // Memory agent runs ONCE to extract everything from the user's day summary
     const isInitialJournalEntry = (
       isLongMessage &&
       !hasCachedMemories &&
@@ -572,6 +586,7 @@ export async function POST(req: NextRequest) {
         message,
         experienceMemories,
         structuredExtraction,
+        effectiveHistory,
         true, // isInitialJournalEntry
         userId,
         date
@@ -604,6 +619,7 @@ export async function POST(req: NextRequest) {
         message,
         experienceMemories || [],
         structuredExtraction || { events: [], projects: [], patterns: [], emotions: [] },
+        effectiveHistory,
         false, // isInitialJournalEntry
         userId,
         date

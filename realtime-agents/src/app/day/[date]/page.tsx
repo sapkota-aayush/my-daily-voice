@@ -392,48 +392,44 @@ function DayViewContent() {
           setViewMode('journal');
         }
         
-        // Load saved conversation transcript if it exists (for resuming conversations)
+        // Always try to restore from Redis first (most up-to-date)
+        try {
+          const restoreResponse = await fetch('/api/chat-test/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, date }),
+          });
+          
+          if (restoreResponse.ok) {
+            const restoreData = await restoreResponse.json();
+            if (restoreData.messages && Array.isArray(restoreData.messages) && restoreData.messages.length > 0) {
+              // Restored conversation from Redis
+              // Convert to transcript format and restore
+              const transcriptFormat = restoreData.messages.map((m: any, idx: number) => ({
+                itemId: `restored-${idx}-${m.timestamp || Date.now()}`,
+                role: m.role,
+                title: m.content,
+                status: 'DONE',
+                createdAtMs: m.timestamp || Date.now() - (restoreData.messages.length - idx) * 1000,
+              }));
+              // Store for use when creating agent
+              setSavedTranscript(restoreData.messages);
+              // Restore transcript immediately
+              restoreTranscript(transcriptFormat);
+              return; // Use Redis data, skip Supabase transcript
+            }
+          }
+        } catch (error) {
+          // Failed to restore from Redis, fall through to Supabase
+        }
+        
+        // Fallback: Load saved conversation transcript from Supabase if Redis had nothing
         if (data?.conversation_transcript && Array.isArray(data.conversation_transcript) && data.conversation_transcript.length > 0) {
-          // Loaded saved transcript
+          // Loaded saved transcript from Supabase
           // Store for use when creating agent
           setSavedTranscript(data.conversation_transcript);
           // Restore the saved conversation to the transcript context
           restoreTranscript(data.conversation_transcript);
-        } else if (isToday) {
-          // Also try to restore from Redis (chat-test conversation)
-          try {
-            // Get authenticated user ID
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-              // User not authenticated, skipping conversation restore
-              return;
-            }
-            const userId = user.id;
-            
-            const restoreResponse = await fetch('/api/chat-test/restore', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId, date }),
-            });
-            
-            if (restoreResponse.ok) {
-              const restoreData = await restoreResponse.json();
-              if (restoreData.messages && restoreData.messages.length > 0) {
-                // Restored conversation from Redis
-                // Convert to transcript format and restore
-                const transcriptFormat = restoreData.messages.map((m: any, idx: number) => ({
-                  itemId: `restored-${idx}-${Date.now()}`,
-                  role: m.role,
-                  title: m.content,
-                  status: 'DONE',
-                  createdAtMs: m.timestamp || Date.now(),
-                }));
-                restoreTranscript(transcriptFormat);
-              }
-            }
-          } catch (error) {
-            // Failed to restore from Redis
-          }
         }
       } catch (error: any) {
         // Fetch reflection exception
@@ -508,7 +504,7 @@ function DayViewContent() {
 
   // Restore chat conversation from Redis when switching to chat mode
   useEffect(() => {
-    if (isToday && interactionMode === 'chat' && !isVoiceActive && transcriptItems.length === 0) {
+    if (interactionMode === 'chat' && !isVoiceActive && transcriptItems.length === 0) {
       const restoreChatConversation = async () => {
         try {
           // Get authenticated user ID
@@ -546,7 +542,7 @@ function DayViewContent() {
       
       restoreChatConversation();
     }
-  }, [isToday, interactionMode, isVoiceActive, date, transcriptItems.length, restoreTranscript]);
+  }, [interactionMode, isVoiceActive, date, transcriptItems.length, restoreTranscript]);
 
   // Auto-scroll conversation to bottom when new messages arrive
   useEffect(() => {
@@ -1600,6 +1596,8 @@ CRITICAL: You MUST only speak in English. Never respond in any other language.`,
           clearTimeout(silenceTimeoutRef.current);
           silenceTimeoutRef.current = undefined;
         }
+        // Clear transcript items in UI
+        restoreTranscript([]);
         // Reload the page to refresh everything
         window.location.reload();
       } else {

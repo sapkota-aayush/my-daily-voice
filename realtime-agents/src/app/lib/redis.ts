@@ -122,7 +122,18 @@ export async function getChatTestConversation(
   const redis = getRedisClient();
   const key = `chat-test:conversation:${userId}:${date}`;
   const data = await redis.get(key);
-  return data as ChatTestConversation | null;
+  if (!data) {
+    return null;
+  }
+  // Upstash might return already parsed object or a string
+  if (typeof data === 'string') {
+    try {
+      return JSON.parse(data) as ChatTestConversation;
+    } catch {
+      return null;
+    }
+  }
+  return data as ChatTestConversation;
 }
 
 /**
@@ -187,7 +198,15 @@ export async function addChatTestMessage(
 export async function clearChatTestConversation(userId: string, date: string): Promise<void> {
   const redis = getRedisClient();
   const key = `chat-test:conversation:${userId}:${date}`;
-  await redis.del(key);
+  try {
+    const result = await redis.del(key);
+    // Upstash returns 1 if deleted, 0 if not found
+    if (result === 0) {
+      // Key didn't exist, that's okay
+    }
+  } catch (error: any) {
+    throw new Error(`Failed to delete chat conversation: ${error.message}`);
+  }
 }
 
 // Functions for session memory cache (batch-fetched memories)
@@ -301,7 +320,11 @@ export async function getCachedMemoryForTopic(
 export async function clearSessionMemories(userId: string, date: string): Promise<void> {
   const redis = getRedisClient();
   const key = `session:memories:${userId}:${date}`;
-  await redis.del(key);
+  try {
+    await redis.del(key);
+  } catch (error: any) {
+    throw new Error(`Failed to delete session memories: ${error.message}`);
+  }
 }
 
 /**
@@ -328,6 +351,22 @@ export async function getSessionGrounding(
   const key = `session:grounding:${userId}:${date}`;
   const data = await redis.get(key);
   return data as any | null;
+}
+
+/**
+ * Clear session grounding
+ */
+export async function clearSessionGrounding(
+  userId: string,
+  date: string
+): Promise<void> {
+  const redis = getRedisClient();
+  const key = `session:grounding:${userId}:${date}`;
+  try {
+    await redis.del(key);
+  } catch (error: any) {
+    throw new Error(`Failed to delete session grounding: ${error.message}`);
+  }
 }
 
 /**
@@ -388,7 +427,11 @@ export async function clearExperienceMemories(
 ): Promise<void> {
   const redis = getRedisClient();
   const key = `memory:experiences:${userId}:${date}`;
-  await redis.del(key);
+  try {
+    await redis.del(key);
+  } catch (error: any) {
+    throw new Error(`Failed to delete experience memories: ${error.message}`);
+  }
 }
 
 /**
@@ -451,6 +494,22 @@ export async function updateMemoryUsageTracker(
   tracker.lastUpdated = Date.now();
   
   await redis.set(key, JSON.stringify(tracker), { ex: 86400 }); // 24 hour TTL
+}
+
+/**
+ * Clear memory usage tracker
+ */
+export async function clearMemoryUsageTracker(
+  userId: string,
+  date: string
+): Promise<void> {
+  const redis = getRedisClient();
+  const key = `memory:usage:${userId}:${date}`;
+  try {
+    await redis.del(key);
+  } catch (error: any) {
+    throw new Error(`Failed to delete memory usage tracker: ${error.message}`);
+  }
 }
 
 // Initialize conversation state with context (all memories from mem0)
