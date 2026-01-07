@@ -126,12 +126,12 @@ export default function DashboardPage() {
             <span className="absolute -bottom-1 left-0 w-0 h-px bg-amber-500 transition-all duration-300 group-hover:w-full"></span>
           </Link>
           {isAuthenticated ? (
-            <button 
-              onClick={handleLogout}
-              className="px-6 py-2.5 rounded-full border border-amber-200/60 hover:border-amber-300 hover:bg-amber-50/80 text-amber-800/90 hover:text-amber-900 transition-all duration-300 backdrop-blur-sm bg-white/60"
-            >
-              Sign out
-            </button>
+          <button 
+            onClick={handleLogout}
+            className="px-6 py-2.5 rounded-full border border-amber-200/60 hover:border-amber-300 hover:bg-amber-50/80 text-amber-800/90 hover:text-amber-900 transition-all duration-300 backdrop-blur-sm bg-white/60"
+          >
+            Sign out
+          </button>
           ) : (
             <button 
               onClick={handleSignIn}

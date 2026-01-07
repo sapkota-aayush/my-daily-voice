@@ -9,12 +9,12 @@ export default function HomePage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  
+
   // Check authentication - but don't redirect, just track state
   useEffect(() => {
     async function checkAuth() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
         setIsAuthenticated(!!session);
       } catch (error) {
         console.error('Error checking auth:', error);
@@ -79,9 +79,9 @@ export default function HomePage() {
 
   // Show loading while checking auth
   if (checkingAuth) {
-    return (
-      <div className="bg-white min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-amber-400/30 border-t-amber-600 rounded-full animate-spin" />
+  return (
+    <div className="bg-white min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-amber-400/30 border-t-amber-600 rounded-full animate-spin" />
       </div>
     );
   }

@@ -16,7 +16,7 @@ async function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY || 'sk-dummy-key-for-build';
   return new OpenAI({
     apiKey: apiKey,
-  });
+});
 }
 
 /**
@@ -316,7 +316,7 @@ If no → add a reaction sentence.
           // Regenerate with stricter constraint
           const strictPrompt = `${prompt}\n\n⚠️ Your memory mention was too long. Keep it to ONE CLAUSE, MAX 8 WORDS.`;
           const openai = getOpenAIClient();
-      const retry = await openai.chat.completions.create({
+          const retry = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [
               {
@@ -557,7 +557,7 @@ export async function POST(req: NextRequest) {
       !hasCachedMemories &&
       !message.toLowerCase().trim().match(/^(hey|hi|hello|thanks|thank you|ok|okay|yes|no|yeah|yep)$/i)
     );
-    
+
     let structuredExtraction: JournalExtraction | undefined = undefined;
     
     if (isInitialJournalEntry) {

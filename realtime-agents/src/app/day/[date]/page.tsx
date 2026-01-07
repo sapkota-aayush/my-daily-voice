@@ -394,34 +394,34 @@ function DayViewContent() {
         
         // Always try to restore from Redis first (most up-to-date)
         try {
-          const restoreResponse = await fetch('/api/chat-test/restore', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, date }),
-          });
-          
-          if (restoreResponse.ok) {
-            const restoreData = await restoreResponse.json();
+            const restoreResponse = await fetch('/api/chat-test/restore', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId, date }),
+            });
+            
+            if (restoreResponse.ok) {
+              const restoreData = await restoreResponse.json();
             if (restoreData.messages && Array.isArray(restoreData.messages) && restoreData.messages.length > 0) {
-              // Restored conversation from Redis
-              // Convert to transcript format and restore
-              const transcriptFormat = restoreData.messages.map((m: any, idx: number) => ({
+                // Restored conversation from Redis
+                // Convert to transcript format and restore
+                const transcriptFormat = restoreData.messages.map((m: any, idx: number) => ({
                 itemId: `restored-${idx}-${m.timestamp || Date.now()}`,
-                role: m.role,
-                title: m.content,
-                status: 'DONE',
+                  role: m.role,
+                  title: m.content,
+                  status: 'DONE',
                 createdAtMs: m.timestamp || Date.now() - (restoreData.messages.length - idx) * 1000,
-              }));
+                }));
               // Store for use when creating agent
               setSavedTranscript(restoreData.messages);
               // Restore transcript immediately
-              restoreTranscript(transcriptFormat);
+                restoreTranscript(transcriptFormat);
               return; // Use Redis data, skip Supabase transcript
+              }
             }
-          }
-        } catch (error) {
+          } catch (error) {
           // Failed to restore from Redis, fall through to Supabase
-        }
+          }
         
         // Fallback: Load saved conversation transcript from Supabase if Redis had nothing
         if (data?.conversation_transcript && Array.isArray(data.conversation_transcript) && data.conversation_transcript.length > 0) {
@@ -1667,12 +1667,12 @@ CRITICAL: You MUST only speak in English. Never respond in any other language.`,
       {/* Header */}
       <header className="fixed top-0 w-full z-40 px-6 md:px-12 py-6 flex items-center justify-between transition-all duration-300">
         <div className="flex items-center gap-4">
-          <button 
-            onClick={handleBack}
-            className="flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-amber-600 text-2xl">auto_stories</span>
-          </button>
+        <button 
+          onClick={handleBack}
+          className="flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-amber-600 text-2xl">auto_stories</span>
+        </button>
           
           {/* Date Navigation Buttons */}
           <div className="flex items-center gap-2">

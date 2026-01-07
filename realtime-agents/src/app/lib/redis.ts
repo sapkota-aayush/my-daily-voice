@@ -321,7 +321,7 @@ export async function clearSessionMemories(userId: string, date: string): Promis
   const redis = getRedisClient();
   const key = `session:memories:${userId}:${date}`;
   try {
-    await redis.del(key);
+  await redis.del(key);
   } catch (error: any) {
     throw new Error(`Failed to delete session memories: ${error.message}`);
   }
@@ -428,7 +428,7 @@ export async function clearExperienceMemories(
   const redis = getRedisClient();
   const key = `memory:experiences:${userId}:${date}`;
   try {
-    await redis.del(key);
+  await redis.del(key);
   } catch (error: any) {
     throw new Error(`Failed to delete experience memories: ${error.message}`);
   }

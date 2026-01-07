@@ -29,7 +29,7 @@ async function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY || 'sk-dummy-key-for-build';
   return new OpenAI({
     apiKey: apiKey,
-  });
+});
 }
 
 /**
