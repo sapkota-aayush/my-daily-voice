@@ -23,13 +23,20 @@ import {
 } from '@/app/lib/redis';
 
 // Lazy initialization - only create client when needed (not during build)
-async function getOpenAIClient() {
+// Now uses Backboard if API key is set, otherwise falls back to OpenAI
+async function getOpenAIClient(userId: string = 'default-user', date: string = new Date().toISOString().split('T')[0]) {
+  // Use Backboard wrapper if API key is set
+  if (process.env.BACKBOARD_API_KEY) {
+    const { getAIClient } = await import('@/app/lib/backboardClient');
+    return await getAIClient(userId, date);
+  }
+  
+  // Fallback to OpenAI
   const { default: OpenAI } = await import('openai');
-  // Use dummy key during build, real key at runtime
   const apiKey = process.env.OPENAI_API_KEY || 'sk-dummy-key-for-build';
   return new OpenAI({
     apiKey: apiKey,
-});
+  });
 }
 
 /**
@@ -94,7 +101,7 @@ Ask the user what's on their mind to expand further. Keep it brief and open-ende
 "Thanks for sharing all of that. What's on your mind that you'd like to explore further?"`;
 
     try {
-      const openai = await getOpenAIClient();
+      const openai = await getOpenAIClient(userId, date);
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [

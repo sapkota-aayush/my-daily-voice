@@ -10,13 +10,20 @@ import {
 } from '@/app/lib/redis';
 
 // Lazy initialization - only create client when needed (not during build)
-async function getOpenAIClient() {
+// Now uses Backboard if API key is set, otherwise falls back to OpenAI
+async function getOpenAIClient(userId: string = 'default-user', date: string = new Date().toISOString().split('T')[0]) {
+  // Use Backboard wrapper if API key is set
+  if (process.env.BACKBOARD_API_KEY) {
+    const { getAIClient } = await import('@/app/lib/backboardClient');
+    return await getAIClient(userId, date);
+  }
+  
+  // Fallback to OpenAI
   const { default: OpenAI } = await import('openai');
-  // Use dummy key during build, real key at runtime
   const apiKey = process.env.OPENAI_API_KEY || 'sk-dummy-key-for-build';
   return new OpenAI({
     apiKey: apiKey,
-});
+  });
 }
 
 /**
@@ -81,7 +88,7 @@ Ask the user what's on their mind to expand further. Keep it brief and open-ende
 "Thanks for sharing all of that. What's on your mind that you'd like to explore further?"`;
 
     try {
-      const openai = await getOpenAIClient();
+      const openai = await getOpenAIClient(userId, date);
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -269,7 +276,7 @@ If no → add a reaction sentence.
     // If response starts with question or only has question without reaction, regenerate
     if (startsWithQuestion || (hasQuestionMark && sentences.length === 1)) {
       const reactionPrompt = `${prompt}\n\n⚠️ You must include ONE human reaction sentence BEFORE the question. React to what the user MEANS, not what they said. Then ask a question that builds from that reaction.`;
-      const openai = getOpenAIClient();
+      const openai = await getOpenAIClient(userId, date);
       const retry = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -315,7 +322,7 @@ If no → add a reaction sentence.
         if (wordCount > 8) {
           // Regenerate with stricter constraint
           const strictPrompt = `${prompt}\n\n⚠️ Your memory mention was too long. Keep it to ONE CLAUSE, MAX 8 WORDS.`;
-          const openai = getOpenAIClient();
+          const openai = await getOpenAIClient(userId, date);
           const retry = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [
@@ -339,7 +346,7 @@ If no → add a reaction sentence.
     // If memory shouldn't be mentioned but AI included it, regenerate
     if (hasMemoryMention && !shouldMentionMemory) {
       const noMemoryPrompt = `${prompt}\n\n⚠️ Do NOT mention any memories explicitly. Let memory influence your question subtly instead.`;
-      const openai = getOpenAIClient();
+      const openai = await getOpenAIClient(userId, date);
       const retry = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
